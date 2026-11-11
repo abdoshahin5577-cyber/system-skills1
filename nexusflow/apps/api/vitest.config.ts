@@ -4,6 +4,10 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
     environment: 'node',
+    // First run downloads a mongod binary for mongodb-memory-server, so allow generous hook time.
+    hookTimeout: 180_000,
+    testTimeout: 30_000,
+    fileParallelism: false,
     env: {
       NODE_ENV: 'test',
       LOG_LEVEL: 'silent',

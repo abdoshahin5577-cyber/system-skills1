@@ -6,15 +6,19 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import { env } from './config/env';
 import { logger } from './config/logger';
+import { ConsoleMailer, type Mailer } from './infra/mailer';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestId } from './middleware/requestId';
+import { createAuthRouter } from './modules/auth/auth.routes';
 import { createHealthRouter, type ReadinessCheck } from './modules/health/health.routes';
+import { createWorkspaceRouter } from './modules/workspaces/workspace.routes';
 
 export interface AppDeps {
   readinessChecks: ReadinessCheck[];
+  mailer?: Mailer;
 }
 
-export function createApp({ readinessChecks }: AppDeps): Express {
+export function createApp({ readinessChecks, mailer = new ConsoleMailer() }: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', env.TRUST_PROXY);
@@ -36,13 +40,13 @@ export function createApp({ readinessChecks }: AppDeps): Express {
   app.use('/health', health);
   app.use('/api/v1/health', health);
 
-  // Coarse global limiter; stricter per-route limiters (login, reset) arrive with the auth module.
   app.use(
     '/api',
     rateLimit({ windowMs: 15 * 60 * 1000, limit: 600, standardHeaders: 'draft-7', legacyHeaders: false }),
   );
 
-  // Module routers are mounted here under /api/v1 as they are built.
+  app.use('/api/v1/auth', createAuthRouter(mailer));
+  app.use('/api/v1/workspaces', createWorkspaceRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

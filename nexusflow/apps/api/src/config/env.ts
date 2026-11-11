@@ -1,9 +1,9 @@
 import path from 'node:path';
-import dotenv from 'dotenv';
+import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
 
 // Load <repo>/.env (does not override variables already set, e.g. by Docker or tests).
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+loadDotenv({ path: path.resolve(__dirname, '../../../../.env') });
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
